@@ -1,41 +1,126 @@
-# Enterprise-Grade NER: Extracting Entities from Fake vs. Real News
+Enterprise-Grade Named Entity Recognition (NER) Pipeline
+An end-to-end Named Entity Recognition project that compares a classical sparse-feature pipeline against a modern vector-based architecture.
 
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
-![NLP](https://img.shields.io/badge/NLP-spaCy%20%7C%20scikit--learn-green)
-![VectorDB](https://img.shields.io/badge/VectorDB-Pinecone%20%7C%20Chroma-orange)
-![Status](https://img.shields.io/badge/Status-Active-brightgreen)
+Architecture
+This repository is split into two phases:
 
-## 📌 Project Overview
-This project implements a scalable Named Entity Recognition (NER) pipeline designed to extract structured entities (People, Organizations, Locations, Dates) from a corpus of fake and real news articles. 
+Phase 1: Bag of Words, n-grams, TF-IDF, and a token-level Logistic Regression baseline
+Phase 2: Dense embeddings and vector database retrieval
+The implemented baseline follows this flow:
 
-The primary objective is to demonstrate a rigorous, architectural understanding of Natural Language Processing (NLP) by benchmarking classical statistical methods against modern vector-based semantic retrieval systems. By comparing the entity structures of verified news against disinformation, this project also provides analytical value beyond standard text parsing.
+Download and normalize CoNLL-2003
+Export processed sentence records to JSONL
+Convert each token into a local-context training example
+Vectorize context text with TF-IDF and n-grams
+Train a Logistic Regression classifier on token labels
+Evaluate with precision, recall, and F1
+Save artifacts for later CLI inference
+Repository Structure
+.
+|-- configs/
+|-- data/
+|   |-- external/
+|   |-- processed/
+|   `-- raw/
+|-- src/
+|   |-- evaluation/
+|   |-- features/
+|   |-- ingestion/
+|   |-- interface/
+|   |-- models/
+|   |-- preprocessing/
+|   |-- utils/
+|   `-- vector_store/
+|-- tests/
+|-- main.py
+|-- pytest.ini
+|-- requirements.txt
+`-- requirements-vector.txt
+Setup
+Create a virtual environment and install the baseline dependencies:
 
-## 🏗️ Architecture & Methodology
-To rigorously evaluate performance, the project is divided into two distinct modeling phases:
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Optional Phase 2 vector dependencies are separated so the repository stays easier to install on Windows:
 
-### Phase 1: Foundational Statistical Baseline
-Built to establish a performance baseline and showcase classical feature engineering mechanics without relying on "black-box" APIs.
-* **Preprocessing:** Tokenization, lemmatization, and POS tagging using `spaCy`.
-* **Feature Extraction:** Statistical representation of tokens utilizing **Bag of Words (BoW)**, **N-grams**, and **TF-IDF**.
-* **Algorithm:** A Conditional Random Fields (CRF) or Logistic Regression classifier to predict sequence tags based on engineered features.
+python -m pip install -r requirements-vector.txt
+CLI Workflow
+Inspect the available commands:
 
-### Phase 2: Modern Vector-Based Semantic Retrieval
-Contrasts the sparse matrix limitations of the baseline by capturing deep semantic meaning and enabling high-speed similarity search.
-* **Dense Embeddings:** Replaces TF-IDF matrices with dense vector representations (Word2Vec / Transformer embeddings).
-* **Storage & Retrieval:** Integrates a **Vector Database** (e.g., ChromaDB/Pinecone) to store entity embeddings, demonstrating how enterprise systems perform rapid similarity searches on extracted intelligence.
+python main.py --help
+Sanity-check the repository:
 
-## 📊 Dataset & Citation
-This model is trained and evaluated on a Fake and Real News dataset, providing a robust, real-world corpus of unstructured text. 
+python main.py check
+Download and export CoNLL-2003:
 
+python main.py ingest-conll2003
+Train the Phase 1 baseline:
 
-## 📂 Repository Structure
-```text
-├── data/                   # Raw and processed datasets (ignored in git)
-├── notebooks/              # Jupyter notebooks for initial EDA and model prototyping
-├── src/                    # Source code for production pipeline
-│   ├── data_loader.py      # Data ingestion and cleaning scripts
-│   ├── preprocess.py       # spaCy tokenization and feature engineering
-│   ├── baseline_model.py   # TF-IDF and classical ML training scripts
-│   └── vector_model.py     # Embedding generation and Vector DB integration
-├── requirements.txt        # Project dependencies
-└── README.md               # Project documentation
+python main.py train-baseline
+Run prediction on raw text:
+
+python main.py predict-text "Microsoft opened a new office in Seattle"
+Optional Phase 2 vector indexing:
+
+python main.py build-vector-index
+python main.py query-similar "Microsoft"
+CoNLL-2003 Processed Outputs
+The ingestion command writes:
+
+data/processed/train.jsonl
+data/processed/validation.jsonl
+data/processed/test.jsonl
+data/processed/manifest.json
+The generated dataset files and local cache are ignored by Git so the repository remains clean for upload.
+
+Baseline Modeling Details
+The classical baseline uses:
+
+Local token windows with configurable window_size
+TF-IDF over contextual token text
+Unigram and bigram features
+Logistic Regression for token-level BIO tag prediction
+Current baseline configuration is stored in configs/model_config.yaml.
+
+Saved Artifacts
+Training produces:
+
+models/classical/logreg_ner.joblib
+models/classical/logreg_ner_metadata.json
+outputs/metrics/validation_metrics.json
+outputs/metrics/test_metrics.json
+Current Results
+Latest measured baseline metrics on CoNLL-2003:
+
+Validation
+Precision: 0.7941
+Recall: 0.6463
+F1: 0.7086
+Test
+Precision: 0.7157
+Recall: 0.5697
+F1: 0.6282
+These values come from the saved evaluation artifacts in outputs/metrics/.
+
+Example Prediction
+Input:
+
+Microsoft opened a new office in Seattle
+Predicted entities:
+
+Microsoft -> ORG
+Seattle -> LOC
+Testing
+Run the test suite with:
+
+pytest -q
+Dependency Notes
+requirements.txt contains the baseline stack for ingestion, preprocessing, testing, training, and inference.
+
+requirements-vector.txt contains optional Phase 2 packages. On some Windows environments, chromadb may require native build tools.
+
+The Phase 2 commands are implemented with lazy imports and clear error messages, so the baseline pipeline remains usable even when optional vector dependencies are not installed.
+
+Dataset Citation
+Tjong Kim Sang, E. F., and De Meulder, F. (2003). Introduction to the CoNLL-2003 shared task: Language-independent named entity recognition. In Proceedings of CoNLL-2003.
