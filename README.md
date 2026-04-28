@@ -27,8 +27,6 @@ Contrasts the sparse matrix limitations of the baseline by capturing deep semant
 ## 📊 Dataset & Citation
 This model is trained and evaluated on a Fake and Real News dataset, providing a robust, real-world corpus of unstructured text. 
 
-**Dataset Citation:**
-> [Update this with the specific author/link of the dataset you download, e.g., Ahmed, H., Traore, I., & Saad, S. (2017). Detection of Online Fake News Using N-Gram Analysis and Machine Learning Techniques. Springer.]
 
 ## 📂 Repository Structure
 ```text
